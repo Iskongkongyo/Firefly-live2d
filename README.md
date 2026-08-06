@@ -14,7 +14,7 @@
 > 当前版本：**v6.5**  
 > 推荐环境：桌面端与现代触摸屏浏览器，通过 HTTP(S) 访问
 
-![项目展示背景](./assets/firefly-background.jpg)
+![项目展示背景](./assets/live2d.png)
 
 ## 功能特性
 
