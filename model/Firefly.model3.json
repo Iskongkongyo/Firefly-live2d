@@ -1,0 +1,128 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "FileReferences_Moc_0.moc3",
+    "Textures": [
+      "textures/FileReferences_Textures_0_0.png"
+    ],
+    "Physics": "physics/FileReferences_Physics_0.physic3.json",
+    "Motions": {
+      "Idle": [
+        {
+          "Name": "笑一笑（待机）",
+          "File": "motions/idle-smile.motion3.json"
+        },
+        {
+          "Name": "一起看（待机）",
+          "File": "motions/idle-watch.motion3.json"
+        },
+        {
+          "Name": "很可爱（待机）",
+          "File": "motions/idle-cute.motion3.json"
+        }
+      ],
+      "Reset": [
+        {
+          "Name": "回正",
+          "File": "motions/reset.motion3.json"
+        }
+      ],
+      "Tap": [
+        {
+          "Name": "使一颗心免于哀伤（点击）",
+          "File": "motions/sing.motion3.json",
+          "Sound": "sounds/sing.mp3"
+        },
+        {
+          "Name": "点燃星海（点击）",
+          "File": "motions/ignite.motion3.json",
+          "Sound": "sounds/ignite.mp3"
+        }
+      ]
+    },
+    "Expressions": [
+      {
+        "Name": "expression00.exp3",
+        "File": "expressions/FileReferences_Expressions_0_File_0.exp3.json"
+      },
+      {
+        "Name": "expression1.exp3",
+        "File": "expressions/FileReferences_Expressions_1_File_0.exp3.json"
+      },
+      {
+        "Name": "expression2.exp3",
+        "File": "expressions/FileReferences_Expressions_2_File_0.exp3.json"
+      },
+      {
+        "Name": "expression3.exp3",
+        "File": "expressions/FileReferences_Expressions_3_File_0.exp3.json"
+      },
+      {
+        "Name": "expression4.exp3",
+        "File": "expressions/FileReferences_Expressions_4_File_0.exp3.json"
+      },
+      {
+        "Name": "expression5.exp3",
+        "File": "expressions/FileReferences_Expressions_5_File_0.exp3.json"
+      },
+      {
+        "Name": "expression6.exp3",
+        "File": "expressions/FileReferences_Expressions_6_File_0.exp3.json"
+      },
+      {
+        "Name": "expression7.exp3",
+        "File": "expressions/FileReferences_Expressions_7_File_0.exp3.json"
+      },
+      {
+        "Name": "expression8.exp3",
+        "File": "expressions/FileReferences_Expressions_8_File_0.exp3.json"
+      },
+      {
+        "Name": "expression9.exp3",
+        "File": "expressions/FileReferences_Expressions_9_File_0.exp3.json"
+      },
+      {
+        "Name": "expression10.exp3",
+        "File": "expressions/FileReferences_Expressions_10_File_0.exp3.json"
+      }
+    ]
+  },
+  "HitAreas": [
+    {
+      "Name": "饮料",
+      "Id": "ArtMesh153",
+      "Order": 1,
+      "Motion": "其他组#3:回正"
+    },
+    {
+      "Name": "蛋糕",
+      "Id": "ArtMesh154",
+      "Motion": "表情组:使一颗心免于哀伤（点击）"
+    },
+    {
+      "Name": "刘海",
+      "Id": "ArtMesh23",
+      "Motion": "其他组#3:墨镜（点击）"
+    },
+    {
+      "Name": "左侧后发",
+      "Id": "ArtMesh147",
+      "Motion": "表情组:点燃星海（点击）"
+    },
+    {
+      "Name": "右侧后发",
+      "Id": "ArtMesh150",
+      "Motion": "其他组#2:猫耳（点击）"
+    }
+  ],
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    }
+  ]
+}

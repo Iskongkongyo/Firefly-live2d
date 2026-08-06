@@ -1,0 +1,15 @@
+流萤看板娘 v6.5 文件说明
+
+index.html                         展示页与双使用方式文档
+README.md                          完整使用说明
+CHANGELOG.md                       更新日志
+OPTIMIZATION_NOTES.md              油猴脚本审查与优化说明
+alist-snippet.html                 AList 接入片段
+firefly-loader.js                  网页部署加载器
+firefly.css                        看板娘样式
+assets/                            示例背景与恢复图标
+load/                              Cubism Core、PixiJS、Cubism 4 与 firefly-glue.js
+model/                             模型、纹理、动作、表情与音频
+userscript/firefly-live2d.user.js  油猴脚本 v6.5
+userscript/firefly-glue.js         油猴 @require 兼容胶水
+userscript/README.md               油猴安装与自托管说明

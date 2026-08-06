@@ -1,0 +1,214 @@
+.ff-live2d-root {
+  --ff-width: 420px;
+  --ff-height: 620px;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: var(--ff-width);
+  height: var(--ff-height);
+  z-index: 52;
+  pointer-events: none;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity .22s ease, transform .22s ease, visibility 0s linear 0s;
+  will-change: opacity, transform;
+}
+
+.ff-live2d-root.ff-left {
+  right: auto;
+  left: 0;
+}
+
+.ff-live2d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.ff-live2d-root.ff-ready .ff-live2d-canvas {
+  opacity: 1;
+}
+
+.ff-live2d-dialog {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  max-width: 250px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 10px;
+  background: rgba(20, 28, 32, .8);
+  color: #fff;
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  text-align: center;
+  white-space: normal;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .18s ease, transform .18s ease;
+  pointer-events: none;
+}
+
+.ff-live2d-dialog.ff-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ff-live2d-controls {
+  position: absolute;
+  left: calc(100% - 42px);
+  top: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-5px);
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    visibility 0s linear .18s;
+  pointer-events: none;
+}
+
+.ff-live2d-root.ff-controls-visible .ff-live2d-controls,
+.ff-live2d-controls:focus-within {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(2px);
+  transition-delay: 0s;
+  pointer-events: auto;
+}
+
+.ff-live2d-button {
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: 23px/34px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  text-align: center;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .42));
+}
+
+.ff-live2d-button:hover {
+  transform: scale(1.12);
+}
+
+.ff-live2d-button:focus-visible,
+.ff-live2d-show:focus-visible {
+  outline: 2px solid rgba(115, 205, 255, .95);
+  outline-offset: 2px;
+}
+
+.ff-live2d-show {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 52;
+  display: none;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, .2);
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ff-live2d-show img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  image-rendering: auto;
+}
+
+.ff-live2d-show.ff-left {
+  right: auto;
+  left: 12px;
+}
+
+/* 保持 WebGL Canvas 在布局树中，避免重新显示时模型局部 Drawable 丢失。 */
+.ff-live2d-root.ff-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
+}
+
+.ff-live2d-root.ff-hidden .ff-live2d-canvas,
+.ff-live2d-root.ff-hidden .ff-live2d-controls {
+  pointer-events: none;
+}
+
+.ff-live2d-show.ff-visible {
+  display: block;
+}
+
+/* 触摸模式由 allowTouch 控制；尺寸由 JS 写入 --ff-width / --ff-height。 */
+.ff-live2d-root.ff-touch .ff-live2d-canvas {
+  touch-action: manipulation;
+}
+
+.ff-live2d-root.ff-touch .ff-live2d-dialog {
+  max-width: min(220px, calc(100% - 12px));
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.ff-live2d-root.ff-touch .ff-live2d-controls {
+  gap: 3px;
+}
+
+.ff-live2d-root.ff-touch .ff-live2d-button {
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  line-height: 40px;
+}
+
+.ff-live2d-show.ff-touch {
+  right: 8px;
+  bottom: 8px;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+}
+
+.ff-live2d-show.ff-touch.ff-left {
+  right: auto;
+  left: 8px;
+}
+
+/* 长按链接时关闭系统触摸呼出菜单，由流萤显示自定义提示。 */
+.ff-live2d-longpress-link {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

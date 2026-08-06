@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="流萤 Live2D 看板娘：支持网页自行部署与油猴脚本两种方式，适用于 AList、博客、个人主页、文档站及日常浏览网页。">
+  <meta name="theme-color" content="#d8f2f1">
+  <title>流萤看板娘 · 网页部署与油猴脚本</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #15242c;
+      --muted: #536b72;
+      --line: rgba(255, 255, 255, .52);
+      --glass: rgba(244, 252, 252, .72);
+      --glass-strong: rgba(250, 255, 255, .88);
+      --cyan: #42bfc4;
+      --cyan-deep: #147c86;
+      --blue: #5c88b5;
+      --shadow: 0 22px 70px rgba(42, 83, 91, .18);
+      --radius: 28px;
+      --page-right: clamp(20px, 5vw, 78px);
+      --model-space: clamp(360px, 35vw, 520px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 92px;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      line-height: 1.7;
+      background: #eaf6f5;
+      overflow-x: hidden;
+    }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+
+    .site-background {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      overflow: hidden;
+      background: #dcefee;
+    }
+
+    .site-background img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      filter: saturate(.88) contrast(.96) brightness(1.04);
+      transform: scale(1.015);
+    }
+
+    .site-background::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(225, 245, 244, .06) 0%, rgba(233, 248, 247, .18) 32%, rgba(239, 250, 249, .72) 66%, rgba(247, 253, 252, .92) 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(220, 239, 238, .28));
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      opacity: .24;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E");
+    }
+
+    .topbar {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      z-index: 100;
+      width: min(1160px, calc(100% - 36px));
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px 12px 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(248, 255, 255, .68);
+      box-shadow: 0 12px 40px rgba(42, 86, 93, .12);
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: max-content;
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: 12px;
+      box-shadow: 0 5px 16px rgba(45, 108, 116, .18);
+    }
+
+    .brand small {
+      display: block;
+      margin-top: -4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav::-webkit-scrollbar { display: none; }
+
+    .nav a {
+      position: relative;
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border-radius: 10px;
+      color: #34535b;
+      font-size: 14px;
+      font-weight: 650;
+      text-decoration: none;
+      transition: color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible,
+    .nav a.active {
+      color: #0e6972;
+      background: rgba(255,255,255,.66);
+      outline: none;
+    }
+
+    .nav a:hover { transform: translateY(-1px); }
+
+    .nav a.active::after {
+      content: "";
+      position: absolute;
+      left: 11px;
+      right: 11px;
+      bottom: 4px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #44b9bd, #6a8faf);
+    }
+
+    main {
+      position: relative;
+      width: 100%;
+    }
+
+    .hero {
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      padding: 126px var(--page-right) 78px var(--model-space);
+    }
+
+    .hero-card {
+      width: min(720px, 100%);
+      margin-left: auto;
+      padding: clamp(28px, 4.5vw, 58px);
+      border: 1px solid rgba(255,255,255,.64);
+      border-radius: 34px;
+      background: linear-gradient(145deg, rgba(249,255,255,.74), rgba(237,249,248,.58));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px) saturate(1.14);
+      -webkit-backdrop-filter: blur(22px) saturate(1.14);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 18px;
+      color: #287985;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--cyan), rgba(66,191,196,0));
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: clamp(42px, 6vw, 78px);
+      line-height: 1.04;
+      letter-spacing: -.055em;
+      text-wrap: balance;
+    }
+
+    .gradient-text {
+      color: transparent;
+      background: linear-gradient(110deg, #17383d 3%, #1f7f87 52%, #6889a7 98%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .hero-lead {
+      max-width: 610px;
+      margin-bottom: 28px;
+      color: #425e66;
+      font-size: clamp(16px, 1.6vw, 19px);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid rgba(52, 122, 130, .12);
+      border-radius: 14px;
+      color: #21444b;
+      background: rgba(255,255,255,.68);
+      box-shadow: 0 8px 24px rgba(42, 94, 101, .10);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 760;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 13px 28px rgba(39, 111, 119, .16);
+    }
+
+    .button.primary {
+      border-color: transparent;
+      color: #fff;
+      background: linear-gradient(135deg, #42b8bd, #4e86ad);
+    }
+
+    .button svg { width: 17px; height: 17px; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border: 1px solid rgba(255,255,255,.68);
+      border-radius: 999px;
+      color: #496970;
+      background: rgba(255,255,255,.46);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .scroll-cue {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      width: 26px;
+      height: 42px;
+      border: 1px solid rgba(49, 100, 107, .25);
+      border-radius: 99px;
+      transform: translateX(-50%);
+    }
+
+    .scroll-cue::after {
+      content: "";
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      width: 4px;
+      height: 8px;
+      border-radius: 99px;
+      background: #3e8d95;
+      transform: translateX(-50%);
+      animation: scroll-dot 1.8s ease-in-out infinite;
+    }
+
+    @keyframes scroll-dot {
+      0%, 100% { opacity: .3; transform: translate(-50%, 0); }
+      45% { opacity: 1; transform: translate(-50%, 12px); }
+    }
+
+    .content-wrap {
+      padding: 76px var(--page-right) 100px;
+      background:
+        linear-gradient(180deg, rgba(238,248,247,.12), rgba(229,242,241,.82) 8%, rgba(232,245,244,.94) 100%);
+    }
+
+    .content-inner {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+    }
+
+    .section {
+      margin-bottom: 96px;
+      scroll-margin-top: 105px;
+    }
+
+    .section-heading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: min(780px, 100%);
+      margin: 0 auto 32px;
+      text-align: center;
+    }
+
+    .section-heading > div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .section-heading h2 {
+      margin-bottom: 0;
+      font-size: clamp(30px, 4vw, 46px);
+      line-height: 1.13;
+      letter-spacing: -.035em;
+    }
+
+    .section-heading p {
+      max-width: 680px;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 15px;
+      text-wrap: balance;
+    }
+
+    .section-heading .eyebrow { justify-content: center; }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scenario-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 22px;
+      background: rgba(249, 255, 255, .62);
+      box-shadow: 0 14px 45px rgba(57, 98, 104, .09);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -58px;
+      top: -60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(88,190,192,.18), rgba(88,190,192,0) 70%);
+      pointer-events: none;
+    }
+
+    .card-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,.78);
+      border-radius: 14px;
+      color: #267985;
+      background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(203,239,237,.72));
+      box-shadow: 0 8px 22px rgba(57, 124, 131, .13);
+      font-size: 20px;
+    }
+
+    .card h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
+      letter-spacing: -.01em;
+    }
+
+    .card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .scenario-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .scenario-card .card-icon { margin-bottom: 0; }
+
+    .panel {
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.76);
+      border-radius: var(--radius);
+      background: rgba(247, 254, 254, .73);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(89, 130, 135, .11);
+      color: #31565d;
+      background: rgba(255,255,255,.46);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .window-dots { display: inline-flex; gap: 6px; }
+    .window-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(52,110,117,.26); }
+
+    .copy-button {
+      padding: 6px 10px;
+      border: 1px solid rgba(56, 112, 119, .12);
+      border-radius: 9px;
+      color: #35636a;
+      background: rgba(255,255,255,.55);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    pre {
+      margin: 0;
+      padding: 24px;
+      color: #d7f6f2;
+      background: #142b31;
+      font: 13px/1.75 "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      tab-size: 2;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    code { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+    .code-key { color: #78d7d6; }
+    .code-string { color: #f3d88f; }
+    .code-comment { color: #78979b; }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+      margin: 0 0 22px;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: start;
+      color: #45636a;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, #52bbc0, #668caf);
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 7px 15px rgba(58, 135, 143, .2);
+    }
+
+    .steps strong { color: #1d4148; }
+
+
+    .install-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 0 20px;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 18px;
+      background: rgba(239,250,249,.62);
+      box-shadow: 0 10px 34px rgba(48, 94, 101, .08);
+    }
+
+    .install-tab {
+      min-height: 48px;
+      padding: 9px 14px;
+      border: 0;
+      border-radius: 13px;
+      color: #43636a;
+      background: transparent;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .install-tab[aria-selected="true"] {
+      color: #176e77;
+      background: rgba(255,255,255,.86);
+      box-shadow: 0 7px 22px rgba(43, 104, 111, .12);
+    }
+
+    .install-pane[hidden] { display: none; }
+    .install-pane .panel + .notice,
+    .install-pane .steps + .panel { margin-top: 20px; }
+
+    .method-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 4px;
+    }
+
+    .method-note {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 24px;
+      background: rgba(250,255,255,.66);
+      box-shadow: 0 16px 50px rgba(48, 94, 101, .10);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(76, 116, 122, .09);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: #2c565d;
+      background: rgba(235,248,247,.94);
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+
+    tbody tr:hover { background: rgba(255,255,255,.48); }
+    tbody tr:last-child td { border-bottom: 0; }
+    td:first-child code { color: #116f79; font-weight: 800; }
+    td:nth-child(2) { color: #48666d; white-space: nowrap; }
+    td:nth-child(3) { color: #4a656c; }
+
+    .notice {
+      display: flex;
+      gap: 13px;
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px solid rgba(75, 155, 160, .15);
+      border-radius: 16px;
+      color: #3f6268;
+      background: rgba(221, 245, 243, .64);
+      font-size: 13px;
+    }
+
+    .notice strong { color: #156e77; }
+
+    .interaction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .interaction-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .interaction-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(78, 119, 125, .09);
+      color: #4c676e;
+      font-size: 14px;
+    }
+
+    .interaction-list li:last-child { border-bottom: 0; }
+    .interaction-list strong { color: #254950; }
+
+    .thanks {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+    }
+
+    .thanks a {
+      color: #16717a;
+      font-weight: 750;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    footer {
+      padding: 26px 0 4px;
+      color: #60777c;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 1180px) {
+      :root { --model-space: clamp(330px, 34vw, 420px); }
+      .topbar { width: min(1080px, calc(100% - 28px)); }
+      .nav a { padding-inline: 9px; font-size: 13px; }
+      h1 { font-size: clamp(40px, 6vw, 64px); }
+    }
+
+    @media (min-width: 1025px) and (max-width: 1500px) {
+      .content-wrap {
+        padding-left: calc(var(--model-space) + 24px);
+        padding-right: var(--page-right);
+      }
+      .content-inner { width: min(980px, 100%); }
+    }
+
+    @media (max-width: 1024px), (pointer: coarse) {
+      :root { --model-space: var(--page-right); }
+      .site-background img { object-position: 43% center; }
+      .site-background::after {
+        background: linear-gradient(180deg, rgba(240,250,249,.52), rgba(239,250,249,.9) 55%, rgba(232,246,245,.98));
+      }
+      .hero { align-items: flex-end; padding-top: 130px; }
+      .hero-card { width: 100%; }
+      .content-wrap { padding-inline: var(--page-right); }
+      .content-inner { width: 100%; }
+    }
+
+    @media (max-width: 720px) {
+      .topbar { top: 10px; width: calc(100% - 20px); }
+      .brand span { font-size: 14px; }
+      .brand small { display: none; }
+      .nav a { padding: 7px 8px; font-size: 12px; }
+      .hero { padding-top: 112px; padding-bottom: 60px; }
+      .hero-card { padding: 25px 20px; border-radius: 25px; }
+      h1 { font-size: clamp(37px, 13vw, 56px); }
+      .content-wrap { padding-top: 54px; padding-bottom: 70px; }
+      .section { margin-bottom: 66px; }
+      .section-heading { gap: 9px; margin-bottom: 25px; }
+      .feature-grid, .scenario-grid, .interaction-grid, .thanks { grid-template-columns: 1fr; }
+      .actions .button { flex: 1 1 160px; }
+      .card { padding: 20px; }
+      pre { padding: 20px 16px; font-size: 12px; }
+      .scroll-cue { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="site-background" aria-hidden="true">
+    <img src="./assets/firefly-background.jpg" alt="">
+  </div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="返回页面顶部">
+      <img src="./assets/firefly-icon.jpg" alt="流萤图标">
+      <span>流萤看板娘<small>Firefly Live2D</small></span>
+    </a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#features">特性</a>
+      <a href="#scenarios">场景</a>
+      <a href="#quick-start">使用</a>
+      <a href="#config">参数</a>
+      <a href="#interaction">互动</a>
+      <a href="#thanks">致谢</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-card">
+        <p class="eyebrow">Web & Userscript · v6.5</p>
+        <h1 id="hero-title"><span class="gradient-text">让流萤陪你，</span><br>停留在每一个页面。</h1>
+        <p class="hero-lead">
+          既可部署到 AList、博客、个人主页与文档站，也可通过油猴脚本挂载到日常浏览的网站。无需框架，保留动作、表情、语音与配件交互，并支持页面标题、标签页、桌面悬停和移动端长按链接感知。
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#quick-start">
+            开始使用
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <button class="button" id="demo-action" type="button">
+            和流萤互动
+            <span aria-hidden="true">✦</span>
+          </button>
+        </div>
+        <div class="chips" aria-label="项目特性标签">
+          <span class="chip">纯前端接入</span>
+          <span class="chip">动作与语音同步</span>
+          <span class="chip">桌面与触摸适配</span>
+          <span class="chip">可用于 AList</span>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#features" aria-label="向下查看内容"></a>
+    </section>
+
+    <div class="content-wrap">
+      <div class="content-inner">
+        <section class="section reveal" id="features">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Features</p>
+              <h2>不只是摆在角落里的模型</h2>
+            </div>
+            <p>轻量接入、自然交互，并尽量避免影响正文浏览和页面性能。</p>
+          </div>
+          <div class="grid feature-grid">
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">♫</div>
+              <h3>动作与语音可重复触发</h3>
+              <p>唱歌和“点燃星海”可以连续播放；再次触发时会立即停止旧动作，从头启动新的动作与音频。</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">✦</div>
+              <h3>十种随机互动</h3>
+              <p>随机池包含唱歌、点燃星海与八种表情，并避免连续抽到同一项，让每次点击更有变化。</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">⌁</div>
+              <h3>消息框跟随真实发顶</h3>
+              <p>根据当前帧可见 Drawable 计算发顶或猫耳最高点，保留安全距离，不再遮挡头发。</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">◈</div>
+              <h3>配件与控制面板</h3>
+              <p>支持墨镜、猫耳独立开关；鼠标靠近模型时显示返回、随机、资料与隐藏按钮。</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">⌁</div>
+              <h3>会留意你正在看的页面</h3>
+              <p>自动读取页面标题；标题变化时也会重新问候，适合博客、文档站与单页应用。</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">↗</div>
+              <h3>标签页与链接感知</h3>
+              <p>切回当前标签页时欢迎你回来；桌面悬停或移动端长按链接后，还会询问是否想去看看。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section reveal" id="scenarios">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Use cases</p>
+              <h2>适合放在哪里？</h2>
+            </div>
+            <p>可直接嵌入自己维护的网页，也可通过油猴脚本在第三方网站中加载。</p>
+          </div>
+          <div class="grid scenario-grid">
+            <article class="card scenario-card">
+              <div class="card-icon" aria-hidden="true">☁</div>
+              <div><h3>AList 文件站</h3><p>在自定义头部或页脚中引入加载器，为资源页面增加陪伴感与互动入口。</p></div>
+            </article>
+            <article class="card scenario-card">
+              <div class="card-icon" aria-hidden="true">⌘</div>
+              <div><h3>个人主页与博客</h3><p>作为固定在页面边缘的角色组件，配合首页、文章页和关于页面使用。</p></div>
+            </article>
+            <article class="card scenario-card">
+              <div class="card-icon" aria-hidden="true">▤</div>
+              <div><h3>文档站与项目展示</h3><p>通过欢迎语、按钮提示和 JavaScript API，引导访客了解项目功能。</p></div>
+            </article>
+            <article class="card scenario-card">
+              <div class="card-icon" aria-hidden="true">◇</div>
+              <div><h3>油猴脚本与日常网页</h3><p>通过 Tampermonkey 等脚本管理器挂载，并可按网站启用或停用。</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section reveal" id="quick-start">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Quick start</p>
+              <h2>选择你的使用方式</h2>
+            </div>
+            <p>自己维护的网站推荐直接部署；想让流萤出现在第三方网页，则使用油猴脚本。</p>
+          </div>
+
+          <div class="install-tabs" role="tablist" aria-label="使用方式">
+            <button class="install-tab" id="tab-web" type="button" role="tab" aria-selected="true" aria-controls="pane-web" data-install-tab="web">自行部署到网页</button>
+            <button class="install-tab" id="tab-userscript" type="button" role="tab" aria-selected="false" aria-controls="pane-userscript" data-install-tab="userscript" tabindex="-1">使用油猴脚本</button>
+          </div>
+
+          <div class="install-pane" id="pane-web" role="tabpanel" aria-labelledby="tab-web" data-install-pane="web">
+            <p class="method-note">适合 AList、博客、个人主页、文档站和其他允许插入 JavaScript 的页面。</p>
+            <ol class="steps">
+              <li><div><strong>上传整个目录。</strong> 保留 <code>load/</code>、<code>model/</code>、<code>assets/</code>、CSS 与 JS 的相对路径。</div></li>
+              <li><div><strong>填写配置。</strong> 根据页面布局设置左右位置、桌面端和触摸端尺寸。</div></li>
+              <li><div><strong>通过 HTTP(S) 访问。</strong> 不建议用 <code>file://</code> 直接打开，浏览器可能限制音频与模型资源。</div></li>
+            </ol>
+
+            <div class="panel">
+              <div class="panel-head">
+                <span><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>&nbsp;&nbsp;HTML 接入示例</span>
+                <button class="copy-button" type="button" data-copy="install-code">复制代码</button>
+              </div>
+              <pre id="install-code"><code>&lt;script&gt;
+<span class="code-key">window.FireflyLive2DConfig</span> = {
+  side: <span class="code-string">"left"</span>,
+  width: 420,
+  height: 360,
+  scale: 0.94,
+  offsetX: -20,
+  offsetY: 12,
+  allowTouch: true,         <span class="code-comment">// 独立开启触摸屏移动端</span>
+  touchWidth: 260,
+  touchHeight: 360,
+  touchScale: 0.90,
+  touchOffsetX: -12,
+  touchOffsetY: 8,
+  dialogGap: 1,
+  pageTitleMessage: true,
+  returnMessage: <span class="code-string">"欢迎回来~"</span>,
+  linkHoverMessage: true,
+  linkHoverDelay: 1400,
+  linkLongPressDelay: 650,  <span class="code-comment">// 纯触摸设备长按链接提示</span>
+  idleMessageDelay: 90000,
+  homeUrl: <span class="code-string">"/"</span>,
+  profileUrl: <span class="code-string">"https://baike.baidu.com/item/流萤/63849747"</span>,
+  minWidth: 1025,
+  debug: false
+};
+&lt;/script&gt;
+&lt;script src=<span class="code-string">"https://你的域名/firefly-loader.js"</span> defer&gt;&lt;/script&gt;</code></pre>
+            </div>
+
+            <div class="notice">
+              <span aria-hidden="true">💡</span>
+              <div><strong>部署提示：</strong> 推荐使用绝对 URL 引入加载器；资源跨域时，请为模型、纹理、动作与音频配置正确的 CORS 响应头。</div>
+            </div>
+          </div>
+
+          <div class="install-pane" id="pane-userscript" role="tabpanel" aria-labelledby="tab-userscript" data-install-pane="userscript" hidden>
+            <p class="method-note">适合 Tampermonkey、Violentmonkey 等用户脚本管理器。脚本默认全站启用，可通过菜单对当前网站停用。</p>
+            <ol class="steps">
+              <li><div><strong>安装用户脚本管理器。</strong> Chrome、Edge、Firefox 等浏览器均可使用 Tampermonkey 或兼容扩展。</div></li>
+              <li><div><strong>打开脚本安装页。</strong> 点击下方按钮，脚本管理器会识别 <code>.user.js</code> 并展示权限与安装确认。</div></li>
+              <li><div><strong>按需修改配置。</strong> 可编辑 <code>USER_CONFIG</code>、黑白名单模式、桌面尺寸和触摸端参数。</div></li>
+            </ol>
+
+            <div class="method-actions">
+              <a class="button primary" href="./userscript/firefly-live2d.user.js">安装油猴脚本</a>
+              <a class="button" href="./userscript/README.md">查看脚本说明</a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <span><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>&nbsp;&nbsp;油猴脚本关键配置</span>
+                <button class="copy-button" type="button" data-copy="userscript-code">复制配置</button>
+              </div>
+              <pre id="userscript-code"><code><span class="code-comment">// 脚本内 USER_CONFIG；触摸端默认开启</span>
+const USER_CONFIG = {
+  side: <span class="code-string">"left"</span>,
+  width: 420,
+  height: 360,
+  allowTouch: true,
+  touchWidth: 260,
+  touchHeight: 360,
+  touchScale: 0.90,
+  linkHoverMessage: true,
+  linkLongPressDelay: 650,
+  minWidth: 1025
+};
+
+<span class="code-comment">// 自行托管资源时，还要同步修改：</span>
+const BASE = <span class="code-string">"https://你的资源域名/"</span>;
+<span class="code-comment">// 以及脚本头部四行 @require 与 @connect</span></code></pre>
+            </div>
+
+            <div class="notice">
+              <span aria-hidden="true">🔒</span>
+              <div><strong>权限说明：</strong> 本版将 <code>@connect</code> 从通配符收紧到默认资源域名。若更换 <code>BASE</code>，必须同步修改四行 <code>@require</code> 和 <code>@connect</code>。</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section reveal" id="config">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Configuration</p>
+              <h2>参数说明</h2>
+            </div>
+            <p>网页加载器未填写的字段会使用内置默认值；油猴脚本可在 USER_CONFIG 中填写同名参数。示例页将高度覆盖为 360px。</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>参数</th><th>默认值</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>baseUrl</code></td><td>加载器所在目录</td><td>模型、依赖、样式和图标的资源基准路径。</td></tr>
+                <tr><td><code>model</code></td><td><code>model/Firefly.model3.json</code></td><td>Live2D 模型配置文件路径。</td></tr>
+                <tr><td><code>core</code></td><td><code>load/live2dcubismcore.min.js</code></td><td>Live2D Cubism Core 路径。</td></tr>
+                <tr><td><code>pixi</code></td><td><code>load/pixi.min.js</code></td><td>PixiJS 路径。</td></tr>
+                <tr><td><code>live2d</code></td><td><code>load/cubism4.min.js</code></td><td>pixi-live2d-display Cubism 4 构建路径。</td></tr>
+                <tr><td><code>css</code></td><td><code>firefly.css</code></td><td>组件样式文件路径。</td></tr>
+                <tr><td><code>icon</code></td><td><code>assets/firefly-icon.jpg</code></td><td>隐藏后用于恢复显示的按钮图标。</td></tr>
+                <tr><td><code>side</code></td><td><code>"left"</code></td><td>固定位置，可填写 <code>left</code> 或 <code>right</code>。</td></tr>
+                <tr><td><code>width</code></td><td><code>420</code></td><td>组件画布宽度，单位为 px。</td></tr>
+                <tr><td><code>height</code></td><td><code>360</code></td><td>组件画布高度，单位为 px；示例页面使用 360。</td></tr>
+                <tr><td><code>scale</code></td><td><code>0.94</code></td><td>模型在画布中的缩放倍率。</td></tr>
+                <tr><td><code>offsetX</code></td><td><code>-20</code></td><td>模型水平偏移，正值向右。</td></tr>
+                <tr><td><code>offsetY</code></td><td><code>12</code></td><td>模型垂直偏移，正值向下。</td></tr>
+                <tr><td><code>zIndex</code></td><td><code>52</code></td><td>组件与恢复按钮的层级。</td></tr>
+                <tr><td><code>minWidth</code></td><td><code>1025</code></td><td>仅控制非触摸桌面端的最小加载宽度，不再用于开启移动端。</td></tr>
+                <tr><td><code>allowTouch</code></td><td><code>false</code></td><td>是否允许在主指针为粗指针的触摸设备加载模型。</td></tr>
+                <tr><td><code>touchWidth</code></td><td><code>260</code></td><td>触摸模式画布宽度；超过可视视口时自动收缩。</td></tr>
+                <tr><td><code>touchHeight</code></td><td><code>360</code></td><td>触摸模式画布高度；超过可视视口时自动收缩。</td></tr>
+                <tr><td><code>touchScale</code></td><td><code>0.9</code></td><td>触摸模式下模型的独立缩放倍率。</td></tr>
+                <tr><td><code>touchOffsetX</code></td><td><code>-12</code></td><td>触摸模式水平偏移。</td></tr>
+                <tr><td><code>touchOffsetY</code></td><td><code>8</code></td><td>触摸模式垂直偏移。</td></tr>
+                <tr><td><code>touchControlsHideDelay</code></td><td><code>3200</code></td><td>触摸模型后控制按钮继续显示的时间。</td></tr>
+                <tr><td><code>storageKey</code></td><td><code>alist-firefly-live2d-hidden</code></td><td>网页部署使用 localStorage；油猴版使用 GM 存储，并默认按域名分别保存隐藏状态。</td></tr>
+                <tr><td><code>welcome</code></td><td><code>开拓者，我回来啦~</code></td><td>首次加载完成后显示的欢迎语。</td></tr>
+                <tr><td><code>pageTitleMessage</code></td><td><code>true</code></td><td>是否读取页面标题并显示“又在看 xxx 呀~”；标题变化时也会触发。</td></tr>
+                <tr><td><code>pageTitleTemplate</code></td><td><code>又在看 {title} 呀~</code></td><td>标题消息模板，<code>{title}</code> 会被替换为当前标题。</td></tr>
+                <tr><td><code>pageTitleMessageDelay</code></td><td><code>3400</code></td><td>首次标题问候延迟，避免覆盖欢迎语。</td></tr>
+                <tr><td><code>pageTitleChangeDelay</code></td><td><code>700</code></td><td>页面标题发生变化后的提示延迟。</td></tr>
+                <tr><td><code>titleMaxLength</code></td><td><code>28</code></td><td>页面标题在消息框中的最大字符数。</td></tr>
+                <tr><td><code>returnMessage</code></td><td><code>欢迎回来~</code></td><td>从其他标签页切回当前页面时显示；设为空字符串可关闭。</td></tr>
+                <tr><td><code>returnMessageMinHidden</code></td><td><code>1000</code></td><td>标签页至少隐藏多久才触发欢迎消息，单位毫秒。</td></tr>
+                <tr><td><code>linkHoverMessage</code></td><td><code>true</code></td><td>是否启用桌面悬停、键盘聚焦与纯触摸设备长按链接提示。</td></tr>
+                <tr><td><code>linkHoverTemplate</code></td><td><code>想去看看{label}吗？</code></td><td>链接消息模板；<code>{label}</code> 来自文字、aria-label、title 或 URL。</td></tr>
+                <tr><td><code>linkHoverDelay</code></td><td><code>1400</code></td><td>桌面端链接悬停多久后提示，单位毫秒。</td></tr>
+                <tr><td><code>linkHoverDuration</code></td><td><code>2800</code></td><td>链接悬停消息的显示时长。</td></tr>
+                <tr><td><code>linkHoverCooldown</code></td><td><code>8000</code></td><td>同一链接再次提示前的冷却时间。</td></tr>
+                <tr><td><code>linkLabelMaxLength</code></td><td><code>22</code></td><td>自动提取的链接名称最大字符数。</td></tr>
+                <tr><td><code>linkLongPressDelay</code></td><td><code>650</code></td><td>纯触摸设备长按链接多久后提示，单位毫秒。</td></tr>
+                <tr><td><code>linkLongPressMoveTolerance</code></td><td><code>12</code></td><td>长按期间允许的手指移动距离；超过后按滚动处理并取消。</td></tr>
+                <tr><td><code>copyMessage</code></td><td><code>复制好啦，希望能帮到你~</code></td><td>复制页面内容后的反馈；设为空字符串可关闭。</td></tr>
+                <tr><td><code>copyMessageDuration</code></td><td><code>2300</code></td><td>复制反馈消息显示时长。</td></tr>
+                <tr><td><code>bottomMessage</code></td><td><code>已经看到页面底部啦，辛苦了~</code></td><td>首次阅读接近页面底部时显示；设为空字符串可关闭。</td></tr>
+                <tr><td><code>bottomMessageThreshold</code></td><td><code>0.92</code></td><td>阅读进度达到该比例时视为接近页面底部。</td></tr>
+                <tr><td><code>idleMessages</code></td><td>3 条内置消息</td><td>长时间无操作时随机显示的陪伴语；设为 <code>[]</code> 可关闭。</td></tr>
+                <tr><td><code>idleMessageDelay</code></td><td><code>90000</code></td><td>首次空闲提示等待时间，单位毫秒。</td></tr>
+                <tr><td><code>idleMessageInterval</code></td><td><code>120000</code></td><td>后续空闲陪伴消息的间隔。</td></tr>
+                <tr><td><code>fallbackClick</code></td><td><code>true</code></td><td>点击未命中指定区域时，是否执行随机互动。</td></tr>
+                <tr><td><code>expressionDuration</code></td><td><code>4200</code></td><td>八种表情保持时长，单位为毫秒。</td></tr>
+                <tr><td><code>dialogGap</code></td><td><code>24</code></td><td>消息框额外间距；实际安全距离约为 <code>6px + dialogGap</code>。</td></tr>
+                <tr><td><code>buttonHintDuration</code></td><td><code>2600</code></td><td>悬停控制按钮时提示消息的显示时长。</td></tr>
+                <tr><td><code>controlsHideDelay</code></td><td><code>180</code></td><td>鼠标离开模型与按钮区域后，控制栏延迟隐藏的时间。</td></tr>
+                <tr><td><code>homeUrl</code></td><td><code>/</code></td><td>🔙 按钮目标地址，可使用相对或绝对 URL。</td></tr>
+                <tr><td><code>profileUrl</code></td><td>流萤资料页</td><td>🔗 按钮打开的地址。</td></tr>
+                <tr><td><code>profileHint</code></td><td>流萤自我介绍</td><td>鼠标移入 🔗 按钮时显示的提示内容。</td></tr>
+                <tr><td><code>debug</code></td><td><code>false</code></td><td>开启后在控制台输出调试信息。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section reveal" id="interaction">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Interaction</p>
+              <h2>互动与脚本控制</h2>
+            </div>
+            <p>模型加载完成后，可通过 <code>window.FireflyLive2D</code> 在页面脚本中主动控制流萤。</p>
+          </div>
+          <div class="interaction-grid">
+            <article class="card">
+              <h3>模型点击区域</h3>
+              <ul class="interaction-list">
+                <li><strong>蛋糕</strong><span>唱歌</span></li>
+                <li><strong>左侧后发</strong><span>点燃星海</span></li>
+                <li><strong>刘海</strong><span>切换墨镜</span></li>
+                <li><strong>右侧后发</strong><span>切换猫耳</span></li>
+                <li><strong>其他区域</strong><span>随机动作 / 表情</span></li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>常用 JavaScript API</h3>
+              <ul class="interaction-list">
+                <li><strong><code>show()</code> / <code>hide()</code></strong><span>显示或隐藏</span></li>
+                <li><strong><code>say(text)</code></strong><span>显示消息</span></li>
+                <li><strong><code>randomAction()</code></strong><span>随机互动</span></li>
+                <li><strong><code>toggleSunglasses()</code></strong><span>切换墨镜</span></li>
+                <li><strong><code>toggleCatEars()</code></strong><span>切换猫耳</span></li>
+              </ul>
+            </article>
+          </div>
+          <div class="panel" style="margin-top:16px">
+            <div class="panel-head">
+              <span>JavaScript 调用示例</span>
+              <button class="copy-button" type="button" data-copy="api-code">复制代码</button>
+            </div>
+            <pre id="api-code"><code><span class="code-comment">// 请在模型加载完成后调用</span>
+window.FireflyLive2D.say(<span class="code-string">"欢迎回来，开拓者！"</span>, 3000);
+window.FireflyLive2D.randomAction();
+window.FireflyLive2D.toggleCatEars();</code></pre>
+          </div>
+        </section>
+
+        <section class="section reveal" id="thanks">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Credits</p>
+              <h2>致谢与使用说明</h2>
+            </div>
+            <p>感谢上游项目、开源库与模型作者。请尊重相关素材和项目的授权要求。</p>
+          </div>
+          <div class="thanks">
+            <article class="card">
+              <h3>特别致谢</h3>
+              <p>
+                感谢 <a href="https://github.com/Scighost/Firefly" target="_blank" rel="noopener noreferrer">Scighost/Firefly</a>
+                项目提供桌面端实现与相关资源参考；同时感谢 PixiJS、pixi-live2d-display 与 Live2D Cubism 生态。
+              </p>
+            </article>
+            <article class="card">
+              <h3>非商用提醒</h3>
+              <p>本适配包适合个人学习、技术研究与非商业展示。模型及相关素材版权归各自权利方所有，公开部署前请确认并遵守上游授权与素材使用规则。</p>
+            </article>
+          </div>
+        </section>
+
+        <footer>
+          <p>Firefly Live2D Web & Userscript v6.5 · 愿这一刻，使一颗心免于哀伤。</p>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    window.FireflyLive2DConfig = {
+      side: "left",
+      width: 420,
+      height: 360,
+      scale: 0.94,
+      offsetX: -20,
+      offsetY: 12,
+      allowTouch: true,
+      touchWidth: 260,
+      touchHeight: 360,
+      touchScale: 0.90,
+      touchOffsetX: -12,
+      touchOffsetY: 8,
+      expressionDuration: 4200,
+      dialogGap: 1,
+      pageTitleMessage: true,
+      pageTitleMessageDelay: 3400,
+      returnMessage: "欢迎回来~",
+      linkHoverMessage: true,
+      linkHoverDelay: 1400,
+      linkLongPressDelay: 650,
+      copyMessage: "复制好啦，希望能帮到你~",
+      bottomMessage: "已经看到页面底部啦，辛苦了~",
+      idleMessageDelay: 90000,
+      buttonHintDuration: 2600,
+      controlsHideDelay: 180,
+      homeUrl: "#top",
+      profileUrl: "https://baike.baidu.com/item/流萤/63849747",
+      profileHint: "我叫流萤，想要更多了解我吗？",
+      minWidth: 1025,
+      debug: false
+    };
+  </script>
+  <script src="./firefly-loader.js?v=6.5" defer></script>
+  <script>
+    (() => {
+      const plainText = (element) => element?.innerText || "";
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const target = document.getElementById(button.dataset.copy);
+          try {
+            await navigator.clipboard.writeText(plainText(target));
+            window.FireflyLive2D?.say(
+              window.FireflyLive2D.config.copyMessage || "复制好啦，希望能帮到你~",
+              window.FireflyLive2D.config.copyMessageDuration || 2300,
+            );
+            const oldText = button.textContent;
+            button.textContent = "已复制";
+            window.setTimeout(() => { button.textContent = oldText; }, 1500);
+          } catch (error) {
+            button.textContent = "复制失败";
+            window.setTimeout(() => { button.textContent = "复制代码"; }, 1500);
+          }
+        });
+      });
+
+      document.getElementById("demo-action")?.addEventListener("click", () => {
+        if (window.FireflyLive2D) {
+          window.FireflyLive2D.randomAction();
+        } else {
+          window.setTimeout(() => window.FireflyLive2D?.randomAction(), 800);
+        }
+      });
+
+      const installTabs = [...document.querySelectorAll("[data-install-tab]")];
+      const installPanes = [...document.querySelectorAll("[data-install-pane]")];
+      const selectInstallMethod = (name, focus = false) => {
+        installTabs.forEach((tab) => {
+          const active = tab.dataset.installTab === name;
+          tab.setAttribute("aria-selected", String(active));
+          tab.tabIndex = active ? 0 : -1;
+          if (active && focus) tab.focus();
+        });
+        installPanes.forEach((pane) => {
+          pane.hidden = pane.dataset.installPane !== name;
+        });
+      };
+      installTabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => selectInstallMethod(tab.dataset.installTab));
+        tab.addEventListener("keydown", (event) => {
+          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const step = event.key === 'ArrowRight' ? 1 : -1;
+          const next = installTabs[(index + step + installTabs.length) % installTabs.length];
+          selectInstallMethod(next.dataset.installTab, true);
+        });
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: .08 });
+
+      document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
+
+      const navLinks = [...document.querySelectorAll('.nav a[href^="#"]')];
+      const navTargets = navLinks
+        .map((link) => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+
+      const updateActiveNav = () => {
+        const marker = window.scrollY + Math.min(window.innerHeight * .42, 360);
+        let activeId = navTargets[0]?.id;
+        for (const section of navTargets) {
+          if (section.offsetTop <= marker) activeId = section.id;
+        }
+        navLinks.forEach((link) => {
+          const active = link.getAttribute("href") === `#${activeId}`;
+          link.classList.toggle("active", active);
+          if (active) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      };
+
+      let navTicking = false;
+      window.addEventListener("scroll", () => {
+        if (navTicking) return;
+        navTicking = true;
+        window.requestAnimationFrame(() => {
+          updateActiveNav();
+          navTicking = false;
+        });
+      }, { passive: true });
+      window.addEventListener("resize", updateActiveNav, { passive: true });
+      updateActiveNav();
+    })();
+  </script>
+</body>
+</html>

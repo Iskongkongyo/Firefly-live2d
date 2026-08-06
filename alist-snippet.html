@@ -1,0 +1,32 @@
+<script>
+window.FireflyLive2DConfig = {
+  side: "left",             // left / right
+  width: 420,
+  height: 420,
+  scale: 0.94,
+  offsetX: -20,
+  offsetY: 12,
+  allowTouch: true,         // 是否启用触摸屏移动端
+  touchWidth: 260,
+  touchHeight: 360,
+  touchScale: 0.90,
+  touchOffsetX: -12,
+  touchOffsetY: 8,
+  expressionDuration: 4200, // 八个表情维持时间（毫秒）
+  dialogGap: 1,             // 实际安全距离约为 6px + 此值
+  pageTitleMessage: true,   // 自动读取页面标题
+  returnMessage: "欢迎回来~",
+  linkHoverMessage: true,
+  linkHoverDelay: 1400,
+  linkLongPressDelay: 650,  // 纯触摸设备长按链接提示
+  idleMessageDelay: 90000,
+  buttonHintDuration: 2600, // 按钮悬停消息显示时间（毫秒）
+  controlsHideDelay: 180,   // 离开模型和按钮后延迟隐藏（毫秒）
+  homeUrl: "/",             // 返回首页按钮目标，可填写绝对 URL
+  profileUrl: "https://bbs.mihoyo.com/sr/wiki/content/2674/detail?bbs_presentation_style=no_header",
+  profileHint: "我叫流萤，想要更多了解我吗？", // 鼠标移到 🔗 时显示的消息
+  minWidth: 1025,          // 仅控制非触摸桌面端
+  debug: false
+};
+</script>
+<script src="https://live2d.example.com/firefly-loader.js" defer></script>
