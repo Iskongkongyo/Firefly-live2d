@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         流萤 Live2D 看板娘 (Firefly Live2D)
+// @name:en      Firefly Live2D Companion
 // @namespace    https://github.com/Iskongkongyo
-// @version      6.5.0
-// @description  在任意网站挂载流萤 Live2D 看板娘：页面标题与标签页感知、桌面悬停/触摸长按链接提示、移动端独立缩放、动作语音、表情与配件。兼容严格 CSP 站点。
-// @author       流萤看板娘 v6.5 / userscript 封装
+// @version      6.6.0
+// @description  在任意网站挂载流萤 Live2D 看板娘；运行资源支持 jsDelivr 主源与自建源自动容灾，兼容严格 CSP、桌面端和触摸端。
+// @author       流萤看板娘 v6.6 / userscript 封装
 // @match        *://*/*
 // @run-at       document-idle
 // @noframes
@@ -16,40 +17,57 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
-// @connect    cdn.jsdelivr.net
-// @icon      data:image/jpeg;base64,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
+// @connect      cdn.jsdelivr.net
+// @connect      live2d.202132.xyz
+// @icon         data:image/jpeg;base64,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
 // @license      MIT
 // ==/UserScript==
 
 /*
  =============================================================================
-  v6.5.0：触摸端、页面感知与权限优化
+  v6.6.0：jsDelivr + 自建源双源容灾
   --------------------------------------------------------------------------
-  依赖库继续由 @require 加载（油猴下载并注入，不受页面 CSP 限制）。
-  本版同步网页组件 v6.4 的触摸端与页面感知能力，并将 @connect
-  从通配符收紧到默认资源域名。若修改 BASE，请同步修改 @require 与 @connect。
+  运行时资源默认从 jsDelivr 的固定 v6.5.0 标签加载；网络错误、超时、
+  429 或 5xx 时自动切换到 https://live2d.202132.xyz/，不使用
+  raw.githubusercontent.com。主源发生网络型故障后会暂时熔断，避免同一
+  页面后续的 moc3、动作、表情、音频等资源逐个等待主源超时。
 
-  服务器上需要有这些文件：
-      load/live2dcubismcore.min.js
-      load/pixi.min.js
-      load/firefly-glue.js      ← 【新增】必须上传，且顺序在 pixi 之后
-      load/cubism4.min.js
-      model/ …
-      assets/firefly-icon.jpg
+  注意：四个 @require 由油猴管理器在主脚本执行前加载，元数据层本身不支持
+  JavaScript 自动回退；本版的双源容灾覆盖模型、纹理、动作、表情、物理、
+  音频和恢复图标。若希望依赖库也完全避开 jsDelivr，可把四行 @require
+  手动改成自建源地址，同时保留两行 @connect。
 
   提醒：Chrome 请到 chrome://extensions → Tampermonkey → 详细信息，
   打开「允许用户脚本 / Allow User Scripts」（或开发者模式）。
-  开了之后脚本跑在隔离世界，不会污染页面变量，也不会再碰到本次的 CSP 问题。
  =============================================================================
 */
 
 (function () {
 	"use strict";
 
-	// ---  用户配置 ---
-	// 注意：改了 BASE 也要同步改上面四行 @require 的地址！
-	const BASE = "https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/";
+	// ---  资源源配置 ---
+	// 运行时资源始终使用固定版本作为主源，避免 main 分支更新和 CDN 缓存造成版本混用。
+	// 备用源应保持与该标签相同的目录结构和文件内容。
+	const RESOURCE_SOURCES = Object.freeze([
+		Object.freeze({
+			id: "jsdelivr",
+			name: "jsDelivr",
+			base: "https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/",
+			timeout: 9000,
+			binaryTimeout: 12000,
+		}),
+		Object.freeze({
+			id: "selfhost",
+			name: "自建源",
+			base: "https://live2d.202132.xyz/",
+			timeout: 15000,
+			binaryTimeout: 25000,
+		}),
+	]);
+	const RESOURCE_SOURCE_COOLDOWN = 5 * 60 * 1000;
+	const BASE = RESOURCE_SOURCES[0].base; // 生成规范资源 URL；实际请求可自动切换备用源。
 
+	// ---  用户配置 ---
 	const USER_CONFIG = {
 		side: "left", // left / right
 		width: 420,
@@ -166,7 +184,7 @@
 	const listed = () => siteList().includes(HOST);
 	const allowedHere = () => (SITE_MODE === "whitelist" ? listed() : !listed());
 
-	// ---  GM 网络（绕过站点 CSP）---
+	// ---  GM 网络（绕过站点 CSP + 双源容灾）---
 	const gmRequest =
 		typeof GM_xmlhttpRequest === "function"
 			? GM_xmlhttpRequest
@@ -174,50 +192,242 @@
 				? GM.xmlHttpRequest.bind(GM)
 				: null;
 
-	function gmFetch(url, responseType = "text") {
+	const sourceState = RESOURCE_SOURCES.map((source) => ({
+		unhealthyUntil: Math.max(
+			0,
+			Number(store.get(`ff-resource-cooldown:${source.id}`, 0)) || 0,
+		),
+		lastError: "",
+	}));
+	const inFlightResources = new Map();
+	let lastResourceSource = "尚未请求";
+
+	function requestError(message, details = {}) {
+		const error = new Error(message);
+		Object.assign(error, details);
+		return error;
+	}
+
+	function getManagedPath(url) {
+		let absolute;
+		try {
+			absolute = new URL(url, location.href).href;
+		} catch (_) {
+			return null;
+		}
+		for (const source of RESOURCE_SOURCES) {
+			if (absolute.startsWith(source.base)) return absolute.slice(source.base.length);
+		}
+		return null;
+	}
+
+	const managed = (url) => getManagedPath(url) !== null;
+
+	function responseTimeout(source, responseType) {
+		return responseType === "blob" || responseType === "arraybuffer"
+			? source.binaryTimeout
+			: source.timeout;
+	}
+
+	function shouldCooldown(error) {
+		return (
+			error?.kind === "timeout" ||
+			error?.kind === "network" ||
+			error?.status === 408 ||
+			error?.status === 425 ||
+			error?.status === 429 ||
+			Number(error?.status) >= 500
+		);
+	}
+
+	function markSourceFailure(index, error) {
+		const source = RESOURCE_SOURCES[index];
+		const state = sourceState[index];
+		state.lastError = error?.message || String(error);
+		if (!shouldCooldown(error)) return;
+		state.unhealthyUntil = Date.now() + RESOURCE_SOURCE_COOLDOWN;
+		store.set(`ff-resource-cooldown:${source.id}`, state.unhealthyUntil);
+	}
+
+	function markSourceSuccess(index) {
+		const source = RESOURCE_SOURCES[index];
+		const state = sourceState[index];
+		state.lastError = "";
+		state.unhealthyUntil = 0;
+		lastResourceSource = source.name;
+		store.set(`ff-resource-cooldown:${source.id}`, 0);
+	}
+
+	function sourceOrder() {
+		const now = Date.now();
+		return RESOURCE_SOURCES.map((_, index) => index).sort((a, b) => {
+			const aCooling = sourceState[a].unhealthyUntil > now;
+			const bCooling = sourceState[b].unhealthyUntil > now;
+			if (aCooling !== bCooling) return aCooling ? 1 : -1;
+			if (aCooling && bCooling)
+				return sourceState[a].unhealthyUntil - sourceState[b].unhealthyUntil;
+			return a - b;
+		});
+	}
+
+	async function nativeFetchOnce(url, responseType, timeout) {
+		const controller = typeof AbortController === "function" ? new AbortController() : null;
+		const timer = controller
+			? setTimeout(() => controller.abort(), Math.max(1, timeout))
+			: 0;
+		try {
+			const response = await fetch(url, {
+				credentials: "omit",
+				cache: "default",
+				signal: controller?.signal,
+			});
+			if (!response.ok)
+				throw requestError(`HTTP ${response.status} ${url}`, {
+					kind: "http",
+					status: response.status,
+					url,
+				});
+			if (responseType === "arraybuffer") return response.arrayBuffer();
+			if (responseType === "blob") return response.blob();
+			if (responseType === "json") return response.json();
+			return response.text();
+		} catch (error) {
+			if (error?.name === "AbortError")
+				throw requestError(`timeout ${url}`, { kind: "timeout", url });
+			if (error?.kind) throw error;
+			throw requestError(`network error ${url}`, {
+				kind: "network",
+				url,
+				cause: error,
+			});
+		} finally {
+			if (timer) clearTimeout(timer);
+		}
+	}
+
+	function gmFetchOnce(url, responseType, timeout) {
+		if (!gmRequest) return nativeFetchOnce(url, responseType, timeout);
 		return new Promise((resolve, reject) => {
-			if (!gmRequest) {
-				// 兜底：没有 GM_xmlhttpRequest 时退回原生 fetch（会受站点 CSP 限制）
-				fetch(url, { credentials: "omit" })
-					.then((r) =>
-						responseType === "arraybuffer"
-							? r.arrayBuffer()
-							: responseType === "blob"
-								? r.blob()
-								: responseType === "json"
-									? r.json()
-									: r.text(),
-					)
-					.then(resolve, reject);
-				return;
-			}
 			gmRequest({
 				method: "GET",
 				url,
-				timeout: 30000,
+				timeout: Math.max(1, timeout),
 				responseType: responseType === "text" ? undefined : responseType,
 				onload: (res) => {
 					const ok = res.status === 0 || (res.status >= 200 && res.status < 400);
-					if (!ok) return reject(new Error(`HTTP ${res.status} ${url}`));
+					if (!ok)
+						return reject(
+							requestError(`HTTP ${res.status} ${url}`, {
+								kind: "http",
+								status: res.status,
+								url,
+							}),
+						);
 					if (responseType === "text") return resolve(res.responseText);
 					if (responseType === "json") {
 						if (res.response && typeof res.response === "object")
 							return resolve(res.response);
 						try {
 							return resolve(JSON.parse(res.responseText));
-						} catch (e) {
-							return reject(e);
+						} catch (error) {
+							return reject(
+								requestError(`invalid json ${url}`, {
+									kind: "parse",
+									url,
+									cause: error,
+								}),
+							);
 						}
 					}
 					resolve(res.response);
 				},
-				onerror: () => reject(new Error(`network error ${url}`)),
-				ontimeout: () => reject(new Error(`timeout ${url}`)),
+				onerror: () =>
+					reject(requestError(`network error ${url}`, { kind: "network", url })),
+				ontimeout: () =>
+					reject(requestError(`timeout ${url}`, { kind: "timeout", url })),
 			});
 		});
 	}
 
-	const managed = (url) => String(url).startsWith(BASE);
+	async function fetchManaged(relativePath, responseType, transform = null) {
+		const errors = [];
+		for (const index of sourceOrder()) {
+			const source = RESOURCE_SOURCES[index];
+			const candidateUrl = new URL(relativePath, source.base).href;
+			try {
+				LOG("resource try", source.name, relativePath);
+				const data = await gmFetchOnce(
+					candidateUrl,
+					responseType,
+					responseTimeout(source, responseType),
+				);
+				let result = data;
+				if (typeof transform === "function") {
+					try {
+						result = await transform(data, candidateUrl, source);
+					} catch (error) {
+						throw requestError(`资源解码失败 ${candidateUrl}`, {
+							kind: "decode",
+							url: candidateUrl,
+							cause: error,
+						});
+					}
+				}
+				markSourceSuccess(index);
+				LOG("resource ready", source.name, relativePath);
+				return result;
+			} catch (error) {
+				errors.push(`${source.name}: ${error?.message || error}`);
+				markSourceFailure(index, error);
+				console.warn(
+					`[Firefly US] ${source.name} 加载失败，尝试下一资源源：${relativePath}`,
+					error,
+				);
+			}
+		}
+		throw requestError(`所有资源源均加载失败：${relativePath}\n${errors.join("\n")}`, {
+			kind: "all-sources-failed",
+			relativePath,
+		});
+	}
+
+	function requestManaged(url, responseType, transform, cacheSuffix) {
+		const relativePath = getManagedPath(url);
+		if (relativePath === null) {
+			const task = gmFetchOnce(url, responseType, 30000);
+			return typeof transform === "function" ? task.then((data) => transform(data, url, null)) : task;
+		}
+
+		const key = `${responseType}:${relativePath}:${cacheSuffix}`;
+		if (inFlightResources.has(key)) return inFlightResources.get(key);
+
+		const task = fetchManaged(relativePath, responseType, transform).finally(() => {
+			inFlightResources.delete(key);
+		});
+		inFlightResources.set(key, task);
+		return task;
+	}
+
+	function gmFetch(url, responseType = "text") {
+		return requestManaged(url, responseType, null, "raw");
+	}
+
+	function gmFetchTransformed(url, responseType, transform, cacheSuffix = "decoded") {
+		return requestManaged(url, responseType, transform, cacheSuffix);
+	}
+
+	function getResourceStatus() {
+		const now = Date.now();
+		return RESOURCE_SOURCES.map((source, index) => {
+			const remaining = Math.max(0, sourceState[index].unhealthyUntil - now);
+			return {
+				name: source.name,
+				base: source.base,
+				cooldownRemaining: remaining,
+				lastError: sourceState[index].lastError,
+			};
+		});
+	}
 
 	// 让 pixi-live2d-display 的 XHRLoader 走 GM 通道（moc3 / motion / exp / physics）
 	const NativeXHR = W.XMLHttpRequest;
@@ -360,11 +570,14 @@
 			if (!bufferCache.has(this.src)) {
 				bufferCache.set(
 					this.src,
-					gmFetch(this.src, "arraybuffer").then(
+					gmFetchTransformed(
+						this.src,
+						"arraybuffer",
 						(buf) =>
 							new Promise((res, rej) =>
 								ctx.decodeAudioData(buf.slice ? buf.slice(0) : buf, res, rej),
 							),
+						"audio-buffer",
 					),
 				);
 			}
@@ -418,7 +631,7 @@
 	const CSS = `
 .ff-live2d-root {
   --ff-width: 420px;
-  --ff-height: 360px;
+  --ff-height: 620px;
   position: fixed;
   right: 0;
   bottom: 0;
@@ -652,8 +865,7 @@
 
 	// 图标：用 ImageBitmap + canvas 代替 <img src>，绕过 img-src CSP
 	function setIcon(imgEl, url) {
-		gmFetch(url, "blob")
-			.then((blob) => createImageBitmap(blob))
+		gmFetchTransformed(url, "blob", (blob) => createImageBitmap(blob), "icon-bitmap")
 			.then((bitmap) => {
 				const canvas = document.createElement("canvas");
 				canvas.width = bitmap.width;
@@ -670,7 +882,7 @@
 			.catch((e) => LOG("icon failed", e));
 	}
 
-	const FF = { store, setIcon };
+	const FF = { store, setIcon, getResourceStatus };
 
 	// pixi-live2d-display 内部的 XHRLoader 用的是页面原生 XMLHttpRequest，
 	// 在 X（Twitter）这类 connect-src 'self' 的站点上会被直接拦掉。
@@ -858,8 +1070,12 @@
 		for (const rel of textures || []) {
 			const url = new URL(rel, modelUrl).href;
 			if (PIXI.utils.TextureCache[url]) continue;
-			const blob = await gmFetch(url, "blob");
-			const bitmap = await createImageBitmap(blob);
+			const bitmap = await gmFetchTransformed(
+				url,
+				"blob",
+				(blob) => createImageBitmap(blob),
+				"texture-bitmap",
+			);
 			const texture = PIXI.Texture.from(bitmap);
 			PIXI.BaseTexture.addToCache(texture.baseTexture, url);
 			PIXI.Texture.addToCache(texture, url);
@@ -928,7 +1144,17 @@
 			GM_registerMenuCommand("🐱 猫耳开关", () => W.FireflyLive2D?.toggleCatEars());
 			GM_registerMenuCommand("ℹ️ 当前加载模式", () => {
 				const touch = !!W.FireflyLive2D?.config && window.matchMedia?.("(pointer: coarse)").matches;
-				alert(`流萤看板娘 v6.5\n当前网站：${HOST}\n模式：${touch ? "触摸端" : "桌面端"}`);
+				const status = getResourceStatus()
+					.map((item) => {
+						const cooldown = item.cooldownRemaining
+							? `（熔断剩余 ${Math.ceil(item.cooldownRemaining / 1000)} 秒）`
+							: "（可用）";
+						return `${item.name}${cooldown}`;
+					})
+					.join("\n");
+				alert(
+					`流萤看板娘 v6.6\n当前网站：${HOST}\n模式：${touch ? "触摸端" : "桌面端"}\n最近成功资源源：${lastResourceSource}\n\n${status}`,
+				);
 			});
 		}
 	}
@@ -957,7 +1183,7 @@
 	    icon: "assets/firefly-icon.jpg",
 	    side: "left",
 	    width: 420,
-	    height: 360,
+	    height: 620,
 	    scale: 0.94,
 	    offsetX: -20,
 	    offsetY: 12,
