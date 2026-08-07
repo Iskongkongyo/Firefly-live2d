@@ -1,20 +1,13 @@
 # 流萤 Live2D 看板娘：网页部署与油猴脚本
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-6.5-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/platform-Web%20%7C%20Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Language-JS-pink" alt="Language">
-  <img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License">
-</p>
-
 一套可直接嵌入 **AList、博客、个人主页、静态站点与文档站**，也可通过 **Tampermonkey / Violentmonkey** 挂载到第三方网页的流萤 Live2D 看板娘。
 
 它使用 PixiJS 与 Cubism 4 在浏览器中加载模型，支持动作、表情、语音、消息框、配件切换、隐藏恢复和 JavaScript API。整个项目不依赖前端框架，只需保持目录结构并引入一个脚本即可使用。
 
-> 当前版本：**v6.5**  
+> 当前版本：**v6.6.2**  
 > 推荐环境：桌面端与现代触摸屏浏览器，通过 HTTP(S) 访问
 
-![项目展示背景](./assets/live2d.png)
+![项目展示背景](./assets/firefly-background.jpg)
 
 ## 功能特性
 
@@ -46,6 +39,7 @@
 firefly-alist-loader-v6/
 ├─ index.html                 # 项目展示与使用文档页面
 ├─ README.md                  # 使用说明
+├─ CHANGELOG.md               # v6.1～v6.6.2 更新记录
 ├─ alist-snippet.html         # AList 接入代码片段
 ├─ firefly-loader.js          # 主加载器
 ├─ firefly.css                # 看板娘样式
@@ -54,7 +48,7 @@ firefly-alist-loader-v6/
 │  └─ firefly-background.jpg  # 示例页背景图
 ├─ load/                      # PixiJS、Cubism Core 与油猴胶水
 ├─ userscript/
-│  ├─ firefly-live2d.user.js  # 油猴脚本
+│  ├─ firefly-live2d.user.js  # 油猴脚本（双源容灾）
 │  ├─ firefly-glue.js         # @require 作用域兼容胶水
 │  └─ README.md               # 油猴脚本说明
 └─ model/                     # 模型、纹理、动作、表情与音频
@@ -75,13 +69,13 @@ firefly-alist-loader-v6/
 window.FireflyLive2DConfig = {
   side: "left",             // left / right
   width: 420,
-  height: 360,
+  height: 420,
   scale: 0.94,
   offsetX: -20,
   offsetY: 12,
   allowTouch: true,         // 是否在粗指针触摸设备加载
   touchWidth: 260,          // 触摸端独立画布尺寸
-  touchHeight: 360,
+  touchHeight: 220,
   touchScale: 0.90,         // 触摸端独立模型缩放
   touchOffsetX: -12,
   touchOffsetY: 8,
@@ -142,10 +136,13 @@ http://127.0.0.1:8080/
 - `allowTouch: true`，会在粗指针触摸设备使用独立的移动端尺寸。
 - 使用页面标题、标签页切换、复制、页面底部、空闲陪伴和链接提示。
 - 纯触摸设备长按链接约 650ms 后显示提示；滑动超过容差会取消，不妨碍滚动。
-- `@connect` 仅允许默认资源域名，不再使用 `*`。
+- 运行时资源使用 **jsDelivr 主源 + `live2d.202132.xyz` 备用源**，覆盖模型、纹理、动作、表情、物理、音频和恢复图标。
+- 主源发生网络错误、超时、HTTP 429 或 5xx 后自动切换，并熔断 5 分钟，避免后续文件逐个等待超时。
+- 不使用 `raw.githubusercontent.com` 作为备用源；两项资源域名分别声明在 `@connect` 中。
 - 每个网站分别保存隐藏状态，不会在一个网站隐藏后影响所有网站。
+- “当前加载模式”菜单会显示最近成功资源源及熔断状态。
 
-自行托管资源时，必须同步修改脚本中的 `BASE`、四行 `@require` 和 `@connect`。完整说明见 `userscript/README.md`。
+四个 `@require` 由油猴管理器在主脚本运行前加载，无法通过 JavaScript 自动回退；默认固定到 jsDelivr 的 `v6.5.0` 标签。更换资源源、版本或依赖来源时，请同步修改 `RESOURCE_SOURCES`、四行 `@require` 和对应的 `@connect`。完整说明见 `userscript/README.md`。
 
 ## AList 接入
 
@@ -156,13 +153,13 @@ http://127.0.0.1:8080/
 window.FireflyLive2DConfig = {
   side: "left",
   width: 420,
-  height: 360,
+  height: 420,
   scale: 0.94,
   offsetX: -20,
   offsetY: 12,
   allowTouch: true,
   touchWidth: 260,
-  touchHeight: 360,
+  touchHeight: 220,
   touchScale: 0.90,
   touchOffsetX: -12,
   touchOffsetY: 8,
@@ -202,7 +199,7 @@ window.FireflyLive2DConfig = {
 |---|---|---|
 | `side` | `"left"` | 固定在左侧或右侧，可填写 `left` / `right`。 |
 | `width` | `420` | Canvas 宽度，单位 px。 |
-| `height` | `360` | Canvas 高度，单位 px；示例页面覆盖为 `360`。 |
+| `height` | `620` | Canvas 高度，单位 px；示例页面覆盖为 `420`。 |
 | `scale` | `0.94` | 模型缩放倍率。 |
 | `offsetX` | `-20` | 模型水平偏移，正值向右。 |
 | `offsetY` | `12` | 模型垂直偏移，正值向下。 |
@@ -210,7 +207,7 @@ window.FireflyLive2DConfig = {
 | `minWidth` | `1025` | 非触摸桌面端视口宽度低于此值时不加载；不再用于开启移动端。 |
 | `allowTouch` | `false` | 是否允许在主指针为粗指针的触摸设备加载模型。 |
 | `touchWidth` | `260` | 触摸模式画布宽度；超过视口时会自动收缩。 |
-| `touchHeight` | `360` | 触摸模式画布高度；超过视口时会自动收缩。 |
+| `touchHeight` | `220` | 触摸模式画布高度；超过视口时会自动收缩。 |
 | `touchScale` | `0.9` | 触摸模式模型缩放倍率。 |
 | `touchOffsetX` | `-12` | 触摸模式水平偏移。 |
 | `touchOffsetY` | `8` | 触摸模式垂直偏移。 |
@@ -242,7 +239,9 @@ window.FireflyLive2DConfig = {
 | `idleMessages` | 3 条内置消息 | 空闲时随机显示；设为 `[]` 关闭。 |
 | `idleMessageDelay` | `90000` | 首次空闲提示等待时间。 |
 | `idleMessageInterval` | `120000` | 后续空闲提示间隔。 |
-| `fallbackClick` | `true` | 点击未命中指定区域时是否随机互动。 |
+| `fallbackClick` | `true` | 点击或轻触未命中指定区域时是否随机互动，桌面端与触摸端均生效。 |
+| `touchTapMoveTolerance` | `14` | 触摸端轻触允许的最大移动距离，超过则按滑动处理。 |
+| `touchTapMaxDuration` | `600` | 触摸端轻触最长时间，超过则按长按处理，不触发随机互动。 |
 | `expressionDuration` | `4200` | 表情持续时间，单位毫秒。 |
 | `dialogGap` | `24` | 消息框额外间距；实际安全距离约为 `6px + dialogGap`。 |
 | `buttonHintDuration` | `2600` | 控制按钮提示消息显示时长，单位毫秒。 |
@@ -264,7 +263,7 @@ window.FireflyLive2DConfig = {
 | 饮料 | 回正动作 |
 | 其他模型区域 | 随机动作或表情 |
 | 🔙 | 返回 `homeUrl` |
-| 😊 | 随机动作或表情 |
+| 🔷 | 随机动作或表情 |
 | 🔗 | 打开 `profileUrl` |
 | ❌ | 隐藏看板娘 |
 
@@ -312,7 +311,49 @@ FireflyLive2D.destroy();
 - `playExpression(name, duration)`：播放表情并定时恢复
 - `listRandomActions()`：返回随机池项目名称
 
+## v6.4 触摸屏移动端适配
+
+- 新增独立 `allowTouch` 开关，默认关闭，避免改变旧站点行为。
+- 开启后使用 `touchWidth`、`touchHeight`、`touchScale`、`touchOffsetX` 与 `touchOffsetY`，无需降低桌面端 `minWidth`。
+- 触摸端尺寸会受当前可视视口限制，横竖屏切换后自动重新布局。
+- 纯触摸设备将链接“悬停提示”替换为长按提示；手指滑动时自动取消，不影响页面滚动。
+- 长按成功后会拦截该次点击，避免提示刚出现就立即跳转；再次正常点击仍会照常打开链接。
+- 触摸模型会临时显示控制按钮，并采用更适合手指点击的按钮与恢复图标尺寸。
+
+## v6.3 页面感知互动
+
+- 首次加载后自动读取 `document.title`，显示“又在看 xxx 呀~”。
+- 监听标题变化，兼容常见单页应用与前端路由切换。
+- 从其他标签页切回时显示“欢迎回来~”，并带最短隐藏时间防抖。
+- 使用事件委托识别静态与动态链接；鼠标悬停或键盘聚焦后显示“想去看看 xxxx 吗？”。
+- 链接名称按 `data-firefly-label`、`aria-label`、`title`、可见文字、图片 `alt`、锚点标题和 URL 的顺序提取。
+- 新增复制反馈、阅读到底提示和低频空闲陪伴语，并加入冷却与消息避让，减少打扰。
+
+可为文字不明确的链接手动指定名称：
+
+```html
+<a href="/downloads" data-firefly-label="下载中心">📦</a>
+```
+
+## v6.2 关键修复
+
+- 消息框不再以额头附近的“刘海”点击区域作为发顶。
+- 改为遍历当前帧可见 Drawable，以实际发顶或猫耳最高点定位。
+- `dialogGap` 从 0 开始逐像素生效，并始终保留约 6px 基础安全距离。
+- 连续触发唱歌会从头重新播放。
+- 唱歌途中触发“点燃星海”会立即切换动作和音频。
+- 规避内置音频管理中 `play()` 与 `pause()` 的异步竞态。
+- 表情切换、隐藏和销毁时会正确停止旧动作与音频。
+
+更完整的版本记录请查看 [`CHANGELOG.md`](./CHANGELOG.md)。
+
 ## 常见问题
+
+### jsDelivr 超时后会发生什么
+
+油猴版会先请求固定版本的 jsDelivr 地址。若请求出现网络错误、超时、HTTP 429 或 5xx，会立即尝试 `https://live2d.202132.xyz/` 下的同路径文件，并让故障源熔断 5 分钟。熔断期间，后续模型资源会优先使用可用源，而不是每个文件都先等待主源超时。
+
+该回退覆盖运行时资源，不覆盖元数据中的四个 `@require`。若安装后连依赖库都无法启动，请按 `userscript/README.md` 将四行 `@require` 改为自建源。
 
 ### 模型没有显示
 
@@ -373,4 +414,4 @@ dialogGap: 1
 
 ---
 
-❤️愿这一刻，使一颗心免于哀伤。
+愿这一刻，使一颗心免于哀伤。

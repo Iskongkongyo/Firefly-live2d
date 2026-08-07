@@ -760,10 +760,10 @@
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-card">
-        <p class="eyebrow">Web & Userscript · v6.5</p>
+        <p class="eyebrow">Web & Userscript · v6.6.2</p>
         <h1 id="hero-title"><span class="gradient-text">让流萤陪你，</span><br>停留在每一个页面。</h1>
         <p class="hero-lead">
-          既可部署到 AList、博客、个人主页与文档站，也可通过油猴脚本挂载到日常浏览的网站。无需框架，保留动作、表情、语音与配件交互，并支持页面标题、标签页、桌面悬停和移动端长按链接感知。
+          既可部署到 AList、博客、个人主页与文档站，也可通过油猴脚本挂载到日常浏览的网站。无需框架，保留动作、表情、语音与配件交互，并支持页面标题、标签页、桌面悬停、移动端长按链接感知、触摸轻点随机互动，以及油猴版 jsDelivr 与自建源双源容灾。
         </p>
         <div class="actions">
           <a class="button primary" href="#quick-start">
@@ -774,12 +774,16 @@
             和流萤互动
             <span aria-hidden="true">✦</span>
           </button>
+          <a class="button" href="https://github.com/Iskongkongyo/Firefly-live2d" target="_blank">
+            <svg height="28" width="28" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          </a>
         </div>
         <div class="chips" aria-label="项目特性标签">
           <span class="chip">纯前端接入</span>
           <span class="chip">动作与语音同步</span>
-          <span class="chip">桌面与触摸适配</span>
+          <span class="chip">桌面/移动端适配</span>
           <span class="chip">可用于 AList</span>
+          <span class="chip">双源容灾</span>
         </div>
       </div>
       <a class="scroll-cue" href="#features" aria-label="向下查看内容"></a>
@@ -804,7 +808,7 @@
             <article class="card">
               <div class="card-icon" aria-hidden="true">✦</div>
               <h3>十种随机互动</h3>
-              <p>随机池包含唱歌、点燃星海与八种表情，并避免连续抽到同一项，让每次点击更有变化。</p>
+              <p>随机池包含唱歌、点燃星海与八种表情；桌面点击和移动端轻触未命中部位时都能触发，并避免连续抽到同一项。</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">⌁</div>
@@ -888,13 +892,13 @@
 <span class="code-key">window.FireflyLive2DConfig</span> = {
   side: <span class="code-string">"left"</span>,
   width: 420,
-  height: 360,
+  height: 420,
   scale: 0.94,
   offsetX: -20,
   offsetY: 12,
   allowTouch: true,         <span class="code-comment">// 独立开启触摸屏移动端</span>
   touchWidth: 260,
-  touchHeight: 360,
+  touchHeight: 220,
   touchScale: 0.90,
   touchOffsetX: -12,
   touchOffsetY: 8,
@@ -921,7 +925,7 @@
           </div>
 
           <div class="install-pane" id="pane-userscript" role="tabpanel" aria-labelledby="tab-userscript" data-install-pane="userscript" hidden>
-            <p class="method-note">适合 Tampermonkey、Violentmonkey 等用户脚本管理器。脚本默认全站启用，可通过菜单对当前网站停用。</p>
+            <p class="method-note">适合 Tampermonkey、Violentmonkey 等用户脚本管理器。脚本默认全站启用，可通过菜单对当前网站停用；运行时资源会在 jsDelivr 与自建源之间自动容灾。</p>
             <ol class="steps">
               <li><div><strong>安装用户脚本管理器。</strong> Chrome、Edge、Firefox 等浏览器均可使用 Tampermonkey 或兼容扩展。</div></li>
               <li><div><strong>打开脚本安装页。</strong> 点击下方按钮，脚本管理器会识别 <code>.user.js</code> 并展示权限与安装确认。</div></li>
@@ -938,28 +942,42 @@
                 <span><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>&nbsp;&nbsp;油猴脚本关键配置</span>
                 <button class="copy-button" type="button" data-copy="userscript-code">复制配置</button>
               </div>
-              <pre id="userscript-code"><code><span class="code-comment">// 脚本内 USER_CONFIG；触摸端默认开启</span>
+              <pre id="userscript-code"><code><span class="code-comment">// 运行时资源：主源失败后自动尝试备用源</span>
+const RESOURCE_SOURCES = [
+  {
+    name: <span class="code-string">"jsDelivr"</span>,
+    base: <span class="code-string">"https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/"</span>,
+    timeout: 9000,
+    binaryTimeout: 12000
+  },
+  {
+    name: <span class="code-string">"自建源"</span>,
+    base: <span class="code-string">"https://live2d.202132.xyz/"</span>,
+    timeout: 15000,
+    binaryTimeout: 25000
+  }
+];
+
+<span class="code-comment">// 触摸端默认开启；主源网络故障后熔断 5 分钟</span>
+const RESOURCE_SOURCE_COOLDOWN = 5 * 60 * 1000;
 const USER_CONFIG = {
   side: <span class="code-string">"left"</span>,
   width: 420,
   height: 360,
   allowTouch: true,
   touchWidth: 260,
-  touchHeight: 360,
+  touchHeight: 220,
   touchScale: 0.90,
-  linkHoverMessage: true,
   linkLongPressDelay: 650,
   minWidth: 1025
 };
 
-<span class="code-comment">// 自行托管资源时，还要同步修改：</span>
-const BASE = <span class="code-string">"https://你的资源域名/"</span>;
-<span class="code-comment">// 以及脚本头部四行 @require 与 @connect</span></code></pre>
+<span class="code-comment">// 新增域名时同步添加 @connect；四行 @require 不支持脚本内自动回退</span></code></pre>
             </div>
 
             <div class="notice">
               <span aria-hidden="true">🔒</span>
-              <div><strong>权限说明：</strong> 本版将 <code>@connect</code> 从通配符收紧到默认资源域名。若更换 <code>BASE</code>，必须同步修改四行 <code>@require</code> 和 <code>@connect</code>。</div>
+              <div><strong>容灾说明：</strong> 模型、纹理、动作、表情、物理、音频和图标会按 <code>jsDelivr → 自建源</code> 自动切换，并在网络型故障后短暂熔断。四个 <code>@require</code> 在主脚本前加载，无法由 JavaScript 自动回退；必要时请直接改成自建源地址。脚本不会使用 Raw GitHub。</div>
             </div>
           </div>
         </section>
@@ -970,7 +988,7 @@ const BASE = <span class="code-string">"https://你的资源域名/"</span>;
               <p class="eyebrow">Configuration</p>
               <h2>参数说明</h2>
             </div>
-            <p>网页加载器未填写的字段会使用内置默认值；油猴脚本可在 USER_CONFIG 中填写同名参数。示例页将高度覆盖为 360px。</p>
+            <p>网页加载器未填写的字段会使用内置默认值；油猴脚本可在 USER_CONFIG 中填写同名参数。示例页将高度覆盖为 420px。</p>
           </div>
           <div class="table-wrap">
             <table>
@@ -985,7 +1003,7 @@ const BASE = <span class="code-string">"https://你的资源域名/"</span>;
                 <tr><td><code>icon</code></td><td><code>assets/firefly-icon.jpg</code></td><td>隐藏后用于恢复显示的按钮图标。</td></tr>
                 <tr><td><code>side</code></td><td><code>"left"</code></td><td>固定位置，可填写 <code>left</code> 或 <code>right</code>。</td></tr>
                 <tr><td><code>width</code></td><td><code>420</code></td><td>组件画布宽度，单位为 px。</td></tr>
-                <tr><td><code>height</code></td><td><code>360</code></td><td>组件画布高度，单位为 px；示例页面使用 360。</td></tr>
+                <tr><td><code>height</code></td><td><code>620</code></td><td>组件画布高度，单位为 px；示例页面使用 420。</td></tr>
                 <tr><td><code>scale</code></td><td><code>0.94</code></td><td>模型在画布中的缩放倍率。</td></tr>
                 <tr><td><code>offsetX</code></td><td><code>-20</code></td><td>模型水平偏移，正值向右。</td></tr>
                 <tr><td><code>offsetY</code></td><td><code>12</code></td><td>模型垂直偏移，正值向下。</td></tr>
@@ -993,7 +1011,7 @@ const BASE = <span class="code-string">"https://你的资源域名/"</span>;
                 <tr><td><code>minWidth</code></td><td><code>1025</code></td><td>仅控制非触摸桌面端的最小加载宽度，不再用于开启移动端。</td></tr>
                 <tr><td><code>allowTouch</code></td><td><code>false</code></td><td>是否允许在主指针为粗指针的触摸设备加载模型。</td></tr>
                 <tr><td><code>touchWidth</code></td><td><code>260</code></td><td>触摸模式画布宽度；超过可视视口时自动收缩。</td></tr>
-                <tr><td><code>touchHeight</code></td><td><code>360</code></td><td>触摸模式画布高度；超过可视视口时自动收缩。</td></tr>
+                <tr><td><code>touchHeight</code></td><td><code>220</code></td><td>触摸模式画布高度；超过可视视口时自动收缩。</td></tr>
                 <tr><td><code>touchScale</code></td><td><code>0.9</code></td><td>触摸模式下模型的独立缩放倍率。</td></tr>
                 <tr><td><code>touchOffsetX</code></td><td><code>-12</code></td><td>触摸模式水平偏移。</td></tr>
                 <tr><td><code>touchOffsetY</code></td><td><code>8</code></td><td>触摸模式垂直偏移。</td></tr>
@@ -1022,7 +1040,9 @@ const BASE = <span class="code-string">"https://你的资源域名/"</span>;
                 <tr><td><code>idleMessages</code></td><td>3 条内置消息</td><td>长时间无操作时随机显示的陪伴语；设为 <code>[]</code> 可关闭。</td></tr>
                 <tr><td><code>idleMessageDelay</code></td><td><code>90000</code></td><td>首次空闲提示等待时间，单位毫秒。</td></tr>
                 <tr><td><code>idleMessageInterval</code></td><td><code>120000</code></td><td>后续空闲陪伴消息的间隔。</td></tr>
-                <tr><td><code>fallbackClick</code></td><td><code>true</code></td><td>点击未命中指定区域时，是否执行随机互动。</td></tr>
+                <tr><td><code>fallbackClick</code></td><td><code>true</code></td><td>点击或轻触未命中指定区域时，是否执行随机互动；桌面端与触摸端均生效。</td></tr>
+                <tr><td><code>touchTapMoveTolerance</code></td><td><code>14</code></td><td>触摸端判定轻触时允许的最大移动距离，单位像素；超过后视为滑动并取消互动。</td></tr>
+                <tr><td><code>touchTapMaxDuration</code></td><td><code>600</code></td><td>触摸端轻触的最长持续时间，单位毫秒；长按不会误触发随机动作。</td></tr>
                 <tr><td><code>expressionDuration</code></td><td><code>4200</code></td><td>八种表情保持时长，单位为毫秒。</td></tr>
                 <tr><td><code>dialogGap</code></td><td><code>24</code></td><td>消息框额外间距；实际安全距离约为 <code>6px + dialogGap</code>。</td></tr>
                 <tr><td><code>buttonHintDuration</code></td><td><code>2600</code></td><td>悬停控制按钮时提示消息的显示时长。</td></tr>
@@ -1102,7 +1122,7 @@ window.FireflyLive2D.toggleCatEars();</code></pre>
         </section>
 
         <footer>
-          <p>Firefly Live2D Web & Userscript v6.5 · 愿这一刻，使一颗心免于哀伤。</p>
+          <p>Firefly Live2D Web & Userscript v6.6.2 · 愿这一刻，使一颗心免于哀伤。</p>
         </footer>
       </div>
     </div>
@@ -1112,13 +1132,13 @@ window.FireflyLive2D.toggleCatEars();</code></pre>
     window.FireflyLive2DConfig = {
       side: "left",
       width: 420,
-      height: 360,
+      height: 420,
       scale: 0.94,
       offsetX: -20,
       offsetY: 12,
       allowTouch: true,
       touchWidth: 260,
-      touchHeight: 360,
+      touchHeight: 220,
       touchScale: 0.90,
       touchOffsetX: -12,
       touchOffsetY: 8,

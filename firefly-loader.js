@@ -61,6 +61,8 @@
     idleMessageDelay: 90000,
     idleMessageInterval: 120000,
     fallbackClick: true,
+    touchTapMoveTolerance: 14,
+    touchTapMaxDuration: 600,
     expressionDuration: 4200,
     dialogGap: 24,
     buttonHintDuration: 2600,
@@ -270,6 +272,7 @@
     let modelNaturalWidth = 0;
     let modelNaturalHeight = 0;
     let lastHitAt = 0;
+    let hitSerial = 0;
     let destroyed = false;
     let actionSerial = 0;
     let lastRandomIndex = -1;
@@ -1435,17 +1438,101 @@
       model.internalModel.on("beforeModelUpdate", applyAccessories);
 
       model.on("hit", (hitAreas) => {
+        hitSerial += 1;
         lastHitAt = performance.now();
         const hit = hitAreas.find((name) => hitActions[name]);
         if (hit) hitActions[hit]();
       });
 
+      // 桌面端继续使用 click 兜底。触摸端不依赖浏览器合成 click，
+      // 而是单独识别一次未滑动、未长按的 pointer 轻触，避免部分
+      // 移动浏览器因 PIXI 命中处理或滚动手势而不派发 click。
       canvas.addEventListener("click", () => {
-        if (!cfg.fallbackClick) return;
+        if (!cfg.fallbackClick || layout.touch) return;
         window.setTimeout(() => {
           if (performance.now() - lastHitAt > 80) randomAction();
         }, 0);
       });
+
+      let touchTapPointerId = null;
+      let touchTapStartX = 0;
+      let touchTapStartY = 0;
+      let touchTapStartedAt = 0;
+      let touchTapHitSerial = 0;
+      let touchTapMoved = false;
+
+      const resetTouchFallbackTap = () => {
+        touchTapPointerId = null;
+        touchTapStartX = 0;
+        touchTapStartY = 0;
+        touchTapStartedAt = 0;
+        touchTapHitSerial = hitSerial;
+        touchTapMoved = false;
+      };
+
+      canvas.addEventListener("pointerdown", (event) => {
+        if (
+          !cfg.fallbackClick ||
+          !layout.touch ||
+          event.pointerType !== "touch" ||
+          event.isPrimary === false
+        ) return;
+
+        touchTapPointerId = event.pointerId;
+        touchTapStartX = event.clientX;
+        touchTapStartY = event.clientY;
+        touchTapStartedAt = performance.now();
+        touchTapHitSerial = hitSerial;
+        touchTapMoved = false;
+      }, { passive: true });
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== touchTapPointerId || touchTapMoved) return;
+        const tolerance = Math.max(0, finiteNumber(
+          cfg.touchTapMoveTolerance,
+          defaults.touchTapMoveTolerance,
+        ));
+        if (
+          Math.hypot(
+            event.clientX - touchTapStartX,
+            event.clientY - touchTapStartY,
+          ) > tolerance
+        ) touchTapMoved = true;
+      }, { passive: true });
+
+      const finishTouchFallbackTap = (event) => {
+        if (event.pointerId !== touchTapPointerId) return;
+
+        const elapsed = performance.now() - touchTapStartedAt;
+        const maxDuration = Math.max(0, finiteNumber(
+          cfg.touchTapMaxDuration,
+          defaults.touchTapMaxDuration,
+        ));
+        const hitSerialAtStart = touchTapHitSerial;
+        const shouldTrigger =
+          event.type === "pointerup" &&
+          !touchTapMoved &&
+          elapsed <= maxDuration;
+
+        resetTouchFallbackTap();
+        if (!shouldTrigger) return;
+
+        // 等待 PIXI 的 pointertap / hit 先完成。若命中了饮料、蛋糕、
+        // 刘海或后发等专属区域，hitSerial 会变化，此处不会再随机一次。
+        window.setTimeout(() => {
+          if (
+            destroyed ||
+            !cfg.fallbackClick ||
+            !layout.touch ||
+            hitSerial !== hitSerialAtStart
+          ) return;
+          randomAction();
+        }, 120);
+      };
+
+      canvas.addEventListener("pointerup", finishTouchFallbackTap, { passive: true });
+      canvas.addEventListener("pointercancel", finishTouchFallbackTap, { passive: true });
+      canvas.addEventListener("lostpointercapture", finishTouchFallbackTap, { passive: true });
 
       homeButton.addEventListener("click", (event) => {
         event.stopPropagation();

@@ -2,16 +2,16 @@
 // @name         流萤 Live2D 看板娘 (Firefly Live2D)
 // @name:en      Firefly Live2D Companion
 // @namespace    https://github.com/Iskongkongyo
-// @version      6.6.0
-// @description  在任意网站挂载流萤 Live2D 看板娘；运行资源支持 jsDelivr 主源与自建源自动容灾，兼容严格 CSP、桌面端和触摸端。
-// @author       流萤看板娘 v6.6 / userscript 封装
+// @version      6.6.2
+// @description  在任意网站挂载流萤 Live2D 看板娘；支持双源容灾、严格 CSP、桌面与触摸端，并修复移动端未命中区域的轻触随机互动。
+// @author       流萤看板娘 v6.6.2 / userscript 封装
 // @match        *://*/*
 // @run-at       document-idle
 // @noframes
-// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/live2dcubismcore.min.js
-// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/pixi.min.js
-// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/firefly-glue.js
-// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/cubism4.min.js
+// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/live2dcubismcore.min.js#sha256=aoI4WxSE6nxODKxog4zsQKsQBNbZmKnJ/E5hPOcmRxY=
+// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/pixi.min.js#sha256=R4xD+6phoN2xlviL5/y7co5IeTxMKOqFZqyKmTc2OwQ=
+// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/firefly-glue.js#sha256=Xlgc75sVd5mX5sZwWNwA+6f/EqY3mkPixCfARDwEzig=
+// @require      https://cdn.jsdelivr.net/gh/Iskongkongyo/Firefly-live2d@v6.5.0/load/cubism4.min.js#sha256=3Pa1Q5HYihpPYkAcm6hT1HHVBysuDANeIzdPdsl+Lf8=
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
 /*
  =============================================================================
-  v6.6.0：jsDelivr + 自建源双源容灾
+  v6.6.2：双源容灾 + 移动端轻触随机互动（Greasy Fork SRI 兼容）
   --------------------------------------------------------------------------
   运行时资源默认从 jsDelivr 的固定 v6.5.0 标签加载；网络错误、超时、
   429 或 5xx 时自动切换到 https://live2d.202132.xyz/，不使用
@@ -113,6 +113,8 @@
 		idleMessageDelay: 90000,
 		idleMessageInterval: 120000,
 		fallbackClick: true,
+		touchTapMoveTolerance: 14,
+		touchTapMaxDuration: 600,
 		expressionDuration: 4200,
 		dialogGap: 1,
 		buttonHintDuration: 2600,
@@ -1153,7 +1155,7 @@
 					})
 					.join("\n");
 				alert(
-					`流萤看板娘 v6.6\n当前网站：${HOST}\n模式：${touch ? "触摸端" : "桌面端"}\n最近成功资源源：${lastResourceSource}\n\n${status}`,
+					`流萤看板娘 v6.6.2\n当前网站：${HOST}\n模式：${touch ? "触摸端" : "桌面端"}\n最近成功资源源：${lastResourceSource}\n\n${status}`,
 				);
 			});
 		}
@@ -1225,6 +1227,8 @@
 	    idleMessageDelay: 90000,
 	    idleMessageInterval: 120000,
 	    fallbackClick: true,
+	    touchTapMoveTolerance: 14,
+	    touchTapMaxDuration: 600,
 	    expressionDuration: 4200,
 	    dialogGap: 24,
 	    buttonHintDuration: 2600,
@@ -1411,6 +1415,7 @@
 	    let modelNaturalWidth = 0;
 	    let modelNaturalHeight = 0;
 	    let lastHitAt = 0;
+	    let hitSerial = 0;
 	    let destroyed = false;
 	    let actionSerial = 0;
 	    let lastRandomIndex = -1;
@@ -2576,17 +2581,101 @@
 	      model.internalModel.on("beforeModelUpdate", applyAccessories);
 
 	      model.on("hit", (hitAreas) => {
+	        hitSerial += 1;
 	        lastHitAt = performance.now();
 	        const hit = hitAreas.find((name) => hitActions[name]);
 	        if (hit) hitActions[hit]();
 	      });
 
+	      // 桌面端继续使用 click 兜底。触摸端不依赖浏览器合成 click，
+	      // 而是单独识别一次未滑动、未长按的 pointer 轻触，避免部分
+	      // 移动浏览器因 PIXI 命中处理或滚动手势而不派发 click。
 	      canvas.addEventListener("click", () => {
-	        if (!cfg.fallbackClick) return;
+	        if (!cfg.fallbackClick || layout.touch) return;
 	        window.setTimeout(() => {
 	          if (performance.now() - lastHitAt > 80) randomAction();
 	        }, 0);
 	      });
+
+	      let touchTapPointerId = null;
+	      let touchTapStartX = 0;
+	      let touchTapStartY = 0;
+	      let touchTapStartedAt = 0;
+	      let touchTapHitSerial = 0;
+	      let touchTapMoved = false;
+
+	      const resetTouchFallbackTap = () => {
+	        touchTapPointerId = null;
+	        touchTapStartX = 0;
+	        touchTapStartY = 0;
+	        touchTapStartedAt = 0;
+	        touchTapHitSerial = hitSerial;
+	        touchTapMoved = false;
+	      };
+
+	      canvas.addEventListener("pointerdown", (event) => {
+	        if (
+	          !cfg.fallbackClick ||
+	          !layout.touch ||
+	          event.pointerType !== "touch" ||
+	          event.isPrimary === false
+	        ) return;
+
+	        touchTapPointerId = event.pointerId;
+	        touchTapStartX = event.clientX;
+	        touchTapStartY = event.clientY;
+	        touchTapStartedAt = performance.now();
+	        touchTapHitSerial = hitSerial;
+	        touchTapMoved = false;
+	      }, { passive: true });
+
+	      canvas.addEventListener("pointermove", (event) => {
+	        if (event.pointerId !== touchTapPointerId || touchTapMoved) return;
+	        const tolerance = Math.max(0, finiteNumber(
+	          cfg.touchTapMoveTolerance,
+	          defaults.touchTapMoveTolerance,
+	        ));
+	        if (
+	          Math.hypot(
+	            event.clientX - touchTapStartX,
+	            event.clientY - touchTapStartY,
+	          ) > tolerance
+	        ) touchTapMoved = true;
+	      }, { passive: true });
+
+	      const finishTouchFallbackTap = (event) => {
+	        if (event.pointerId !== touchTapPointerId) return;
+
+	        const elapsed = performance.now() - touchTapStartedAt;
+	        const maxDuration = Math.max(0, finiteNumber(
+	          cfg.touchTapMaxDuration,
+	          defaults.touchTapMaxDuration,
+	        ));
+	        const hitSerialAtStart = touchTapHitSerial;
+	        const shouldTrigger =
+	          event.type === "pointerup" &&
+	          !touchTapMoved &&
+	          elapsed <= maxDuration;
+
+	        resetTouchFallbackTap();
+	        if (!shouldTrigger) return;
+
+	        // 等待 PIXI 的 pointertap / hit 先完成。若命中了饮料、蛋糕、
+	        // 刘海或后发等专属区域，hitSerial 会变化，此处不会再随机一次。
+	        window.setTimeout(() => {
+	          if (
+	            destroyed ||
+	            !cfg.fallbackClick ||
+	            !layout.touch ||
+	            hitSerial !== hitSerialAtStart
+	          ) return;
+	          randomAction();
+	        }, 120);
+	      };
+
+	      canvas.addEventListener("pointerup", finishTouchFallbackTap, { passive: true });
+	      canvas.addEventListener("pointercancel", finishTouchFallbackTap, { passive: true });
+	      canvas.addEventListener("lostpointercapture", finishTouchFallbackTap, { passive: true });
 
 	      homeButton.addEventListener("click", (event) => {
 	        event.stopPropagation();

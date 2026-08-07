@@ -1,4 +1,4 @@
-# 流萤看板娘油猴脚本 v6.6
+# 流萤看板娘油猴脚本 v6.6.2
 
 ## 安装
 
@@ -89,3 +89,8 @@ const RESOURCE_SOURCES = [
 ## 触摸端
 
 `USER_CONFIG.allowTouch` 控制是否在粗指针触摸设备加载；触摸端尺寸、缩放和偏移由 `touchWidth`、`touchHeight`、`touchScale`、`touchOffsetX`、`touchOffsetY` 独立控制。
+
+
+## v6.6.2 移动端轻触随机互动
+
+触摸端现在直接识别有效轻触：手指未明显移动、持续时间不超过 600ms，并且没有命中模型预设部位时，随机播放一个动作或表情。滑动、长按、控制按钮点击以及命中特定部位都不会重复触发。可通过 `fallbackClick`、`touchTapMoveTolerance` 和 `touchTapMaxDuration` 调整。
